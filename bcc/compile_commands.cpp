@@ -1,31 +1,25 @@
 #include "bcc/compile_commands.hpp"
 
+#include <iostream>
 #include <optional>
 #include <sstream>
 #include <string_view>
+#include <unordered_map>
 
 #include <boost/json.hpp>
+
+#include "bcc/artifacts.hpp"
+#include "bcc/dep_set_of_files.hpp"
+#include "bcc/path_fragments.hpp"
 
 namespace bcc {
 
 namespace {
-std::optional<boost::json::string>
-find_argument(boost::json::array const& arguments, std::string_view flag)
+bool
+cc_suffix(const std::string_view& v)
 {
-  bool got_flag = false;
-  for (auto const& argument : arguments) {
-    auto const& astr = argument.as_string();
-
-    if (got_flag) {
-      return astr;
-    }
-    if (astr == flag) {
-      got_flag = true;
-    }
-  }
-  return std::nullopt;
+  return v.ends_with(".C") || v.ends_with(".c") || v.ends_with(".cc") || v.ends_with(".cxx") || v.ends_with(".cpp");
 }
-
 /// Join an array of arguments into a commands string.
 std::string
 join_arguments(boost::json::array const& args)
@@ -82,6 +76,10 @@ compile_commands_builder::execution_root(boost::filesystem::path value)
 boost::json::array
 compile_commands_builder::build(analysis::ActionGraphContainer const& action_graph) const
 {
+  const auto fragements = path_fragments(action_graph.path_fragments());
+  const auto art = artifacts(action_graph.artifacts(), fragements);
+  const auto dep_set = dep_set_of_files(action_graph.dep_set_of_files(), art);
+
   // the root element of a compile_commands.json document is an array of objects
   auto json = boost::json::array();
 
@@ -98,23 +96,26 @@ compile_commands_builder::build(analysis::ActionGraphContainer const& action_gra
       std::transform(action_args_begin, std::end(action_args), std::back_inserter(args), [&](auto a) {
         return boost::json::string(replacements_.apply(a));
       });
-      const auto cmd = join_arguments(args);
-      const auto output = find_argument(args, "-o");
-      /// A hack way to get the input file (TODO)
-      const auto file = find_argument(args, "-c");
+      const auto output = art.path_of_artifact(action.primary_output_id());
+      auto file = std::optional<std::string_view>{};
+      for (const auto& k : action.input_dep_set_ids()) {
+        const auto set = dep_set.get(k);
+        file = set.find_if(cc_suffix);
+        if (file.has_value()) {
+          break;
+        }
+      }
+
+      // input file is required
       if (file.has_value()) {
-        // one entry in the compile_commands.json document
         auto obj = boost::json::object();
         obj.insert(boost::json::object::value_type{ "directory", execution_root_.native() });
         if (arguments_) {
           obj.insert(boost::json::object::value_type{ "arguments", args });
         }
-        obj.insert(boost::json::object::value_type{ "command", cmd });
+        obj.insert(boost::json::object::value_type{ "command", join_arguments(args) });
         obj.insert(boost::json::object::value_type{ "file", file.value() });
-        if (output.has_value()) {
-          // `output` is optional in `compile_commands.json`
-          obj.insert(boost::json::object::value_type{ "output", output.value() });
-        }
+        obj.insert(boost::json::object::value_type{ "output", output });
 
         json.push_back(obj);
       }

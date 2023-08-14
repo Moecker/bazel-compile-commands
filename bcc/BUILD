@@ -6,6 +6,16 @@ cc_proto_library(
 )
 
 cc_library(
+    name = "artifacts",
+    srcs = ["artifacts.cpp"],
+    hdrs = ["artifacts.hpp"],
+    deps = [
+        ":analysis",
+        ":path_fragments",
+    ],
+)
+
+cc_library(
     name = "bazel",
     srcs = ["bazel.cpp"],
     hdrs = ["bazel.hpp"],
@@ -23,6 +33,9 @@ cc_library(
     hdrs = ["compile_commands.hpp"],
     deps = [
         ":analysis",
+        ":artifacts",
+        ":dep_set_of_files",
+        ":path_fragments",
         ":replacements",
         "@boost//:filesystem",
         "@boost//:io",
@@ -40,6 +53,17 @@ cc_test(
 )
 
 cc_library(
+    name = "dep_set_of_files",
+    srcs = ["dep_set_of_files.cpp"],
+    hdrs = ["dep_set_of_files.hpp"],
+    deps = [
+        ":analysis",
+        ":artifacts",
+        "@boost//:core",
+    ],
+)
+
+cc_library(
     name = "options",
     srcs = ["options.cpp"],
     hdrs = ["options.hpp"],
@@ -47,6 +71,15 @@ cc_library(
         "@boost//:filesystem",
         "@boost//:process",
         "@boost//:program_options",
+    ],
+)
+
+cc_library(
+    name = "path_fragments",
+    srcs = ["path_fragments.cpp"],
+    hdrs = ["path_fragments.hpp"],
+    deps = [
+        ":analysis",
     ],
 )
 
