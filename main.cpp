@@ -4,6 +4,7 @@
 #include "bcc/platform.hpp"
 #include "bcc/replacements.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -11,7 +12,6 @@
 #include <stdexcept>
 #include <string_view>
 
-#include <boost/filesystem.hpp>
 #include <boost/json.hpp>
 
 #include <unistd.h>
@@ -54,7 +54,7 @@ main(int argc, char** argv)
 
     auto options = bcc::options::from_argv(argc, argv);
 
-    if (options.bazel_command.empty() || !boost::filesystem::exists(options.bazel_command)) {
+    if (options.bazel_command.empty() || !std::filesystem::exists(options.bazel_command)) {
       std::cerr << "fatal error: bazel or bazelisk command not found, please enure the command is in PATH or use "
                    "`--bazel-command PATH'"
                 << std::endl;

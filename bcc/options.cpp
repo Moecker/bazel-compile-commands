@@ -4,12 +4,12 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
-#include <boost/filesystem.hpp>
+
 #include <boost/process/search_path.hpp>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace bcc {
 namespace {
@@ -117,7 +117,7 @@ options::from_argv(int argc, char* argv[])
     }
   }
   if (!result.bazel_command.empty()) {
-    result.bazel_command = boost::filesystem::canonical(result.bazel_command);
+    result.bazel_command = std::filesystem::canonical(result.bazel_command);
   }
   return result;
 }
