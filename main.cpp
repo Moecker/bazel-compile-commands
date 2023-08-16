@@ -104,7 +104,7 @@ main(int argc, char** argv)
     const auto compile_commands = builder.build(agc);
     {
       if (options.verbose) {
-        std::cerr << "Writting " << compile_commands.size() << " commands to `" << options.output_path << "`"
+        std::cerr << "Writing " << compile_commands.size() << " commands to `" << options.output_path << "`"
                   << std::endl;
       }
       // Allow `-` as output_path to mean write to stdout instead of a file.
